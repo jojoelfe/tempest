@@ -1,0 +1,55 @@
+<!--
+ChimeraX bundle names must start with "ChimeraX-"
+to avoid clashes with package names in pypi.python.org.
+When uploaded to the ChimeraX toolshed, the bundle
+will be displayed without the ChimeraX- prefix.
+-->
+
+<BundleInfo name="ChimeraX-TemplateMatchingCommand"
+	    version="0.1" package="chimerax.template_matching_cmd"
+  	    minSessionVersion="1" maxSessionVersion="1">
+
+  <!-- Additional information about bundle source -->
+  <Author>Johannes Elferich</Author>
+  <Email>johannes.elferich@umassmed.edu</Email>
+  <URL></URL>
+
+  <!-- Synopsis is a one-line description
+       Description is a full multi-line description -->
+  <Synopsis>ChimeraX interface to interactively inspect template matching results</Synopsis>
+  <Description>
+  
+  
+  </Description>
+
+  <!-- Categories is a list where this bundle should appear -->
+  <Categories>
+    <Category name="General"/>
+  </Categories>
+
+  <!-- DataFiles is a list of additional files to include in bundle -->
+  <DataFiles>
+  </DataFiles>
+
+  <!-- Dependencies on other ChimeraX/Python packages -->
+  <Dependencies>
+    <Dependency name="ChimeraX-Core" version=">=1.1"/>
+    <Dependency name="pandas" />
+  </Dependencies>
+
+  <Classifiers>
+    <!-- Development Status should be compatible with bundle version number -->
+    <PythonClassifier>Development Status :: 3 - Alpha</PythonClassifier>
+    <PythonClassifier>License :: Freeware</PythonClassifier>
+    <!-- ChimeraX classifiers describe supplied functionality -->
+    <!-- Register two commands for printing the center of mass
+	 and selecting/coloring atom(s) nearest the center of mass of atoms -->
+    <ChimeraXClassifier>ChimeraX :: Command :: tm load_manual :: General ::
+      Load template match results by manually loading files</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tm load_project :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tm change_threshold :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>
+  </Classifiers>
+
+</BundleInfo>
