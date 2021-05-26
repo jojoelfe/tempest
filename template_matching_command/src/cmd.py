@@ -108,3 +108,24 @@ def changethreshold(session,template,threshold):
 changethreshold_desc = CmdDesc(required=[("template", ModelArg),
                     ("threshold", FloatArg)],
                     optional=[])
+
+def loadtm_project(session, cistem_database, image_asset, volume_asset, job_number=None):
+    import sqlite3
+
+    con = sqlite3.connect(cistem_database)
+    cur = con.cursor()
+
+    cur.execute('SELECT * FROM TEMPLATE_MATCH WHERE')
+
+    results = cur.fetchall()
+    if len(results) > 1:
+        cur.execute('SELECT * FROM TEMPLATE_MATCH WHERE')
+        results = cur.fetchall()
+    if len(results) == 0:
+        session.logger.info("No Template Match results found!")
+    
+
+loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg),
+                    ("image_asset", IntArg),
+                    ("volume_asset", IntArg)],
+                    optional=[("job_number", IntArg)])

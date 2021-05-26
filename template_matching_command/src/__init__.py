@@ -34,6 +34,9 @@ class _MyAPI(BundleAPI):
         if ci.name == "tm load_manual":
             func = cmd.loadtm
             desc = cmd.loadtm_desc
+        elif ci.name == "tm load_project":
+            func = cmd.loadtm_project
+            desc = cmd.loadtm_project_desc
         elif ci.name == "tm change_threshold":
             func = cmd.changethreshold
             desc = cmd.changethreshold_desc
