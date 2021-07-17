@@ -40,6 +40,9 @@ class _MyAPI(BundleAPI):
         elif ci.name == "tm change_threshold":
             func = cmd.changethreshold
             desc = cmd.changethreshold_desc
+        elif ci.name == "tm color_by_score":
+            func = cmd.color_by_score
+            desc = cmd.color_by_score_desc
         else:
             raise ValueError("trying to register unknown command: %s" % ci.name)
         if desc.synopsis is None:
