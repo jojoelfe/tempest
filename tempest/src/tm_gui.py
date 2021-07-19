@@ -13,7 +13,7 @@
 
 from chimerax.ui import HtmlToolInstance
 
-class TutorialTool(HtmlToolInstance):
+class TemplateMatchingTool(HtmlToolInstance):
 
     # Inheriting from HtmlToolInstance gets us the following attributes
     # after initialization:
@@ -27,7 +27,7 @@ class TutorialTool(HtmlToolInstance):
 
     SESSION_ENDURING = False    # Does this instance persist when session closes
     SESSION_SAVE = False        # No session saving for now
-    CUSTOM_SCHEME = "tutorial"  # Scheme used in HTML for callback into Python
+    CUSTOM_SCHEME = "templatematching"  # Scheme used in HTML for callback into Python
     help = "help:user/tools/tutorial.html"
                                 # Let ChimeraX know about our help page
 
@@ -40,18 +40,18 @@ class TutorialTool(HtmlToolInstance):
         # "log_errors=True" to get Javascript errors logged
         # to the ChimeraX log window.
         super().__init__(session, tool_name, size_hint=(575, 400))
-
+        # self.session = session
         # Set name displayed on title bar (defaults to tool_name)
         # Must be after the superclass initialization in order
         # to override the default
-        self.display_name = "Tutorial — HTML-based"
+        self.display_name = "Template Matching"
 
         self._build_ui()
 
     def _build_ui(self):
         # Fill in html viewer with initial page in the module
         import os.path
-        html_file = os.path.join(os.path.dirname(__file__), "tool.html")
+        html_file = os.path.join(os.path.dirname(__file__), "tm_gui.html")
         import pathlib
         self.html_view.setUrl(pathlib.Path(html_file).as_uri())
 
@@ -71,45 +71,45 @@ class TutorialTool(HtmlToolInstance):
         if command == "update_models":
             self.update_models()
             return
-        elif command in ["cofm", "highlight"]:
+        elif command in ["load_database"]:
             # Collect the optional parameters from URL query parameters
             # and construct a command to execute
             from urllib.parse import parse_qs
             query = parse_qs(url.query())
-
+            self.session.logger.info(f"{query}")
             # First the command
-            cmd_text = ["tutorial", command]
+            # cmd_text = ["tutorial", command]
 
             # Next the atom specifier
-            target = query["target"][0]
-            models = query["model"]
-            if target == "sel":
-                cmd_text.append("sel")
-            elif target == "model":
-                cmd_text.append(''.join(models))
+            # target = query["target"][0]
+            # models = query["model"]
+            # if target == "sel":
+            #    cmd_text.append("sel")
+            # elif target == "model":
+            #    cmd_text.append(''.join(models))
             # else target must be "all":
             #   for which we leave off atom specifier completely
 
             # Then "highlight" specific parameters
-            if command == "highlight":
-                color = query["color"][0]
-                cmd_text.append(color)
-                count = query["count"][0]
-                cmd_text.extend(["count", count])
+            #if command == "highlight":
+            #    color = query["color"][0]
+            #    cmd_text.append(color)
+            #    count = query["count"][0]
+            #    cmd_text.extend(["count", count])
 
             # Add remaining global options
-            weighted = "weighted" in query
-            cmd_text.extend(["weighted", "true" if weighted else "false"])
-            transformed = "transformed" in query
-            cmd_text.extend(["transformed", "true" if transformed else "false"])
+            #weighted = "weighted" in query
+            #cmd_text.extend(["weighted", "true" if weighted else "false"])
+            #transformed = "transformed" in query
+            #cmd_text.extend(["transformed", "true" if transformed else "false"])
 
             # Run the command
-            cmd = ' '.join(cmd_text)
-            from chimerax.core.commands import run
-            run(self.session, cmd)
+            #cmd = ' '.join(cmd_text)
+            #from chimerax.core.commands import run
+            #run(self.session, cmd)
         else:
             from chimerax.core.errors import UserError
-            raise UserError("unknown tutorial command: %s" % command)
+            raise UserError("unknown tm command: %s" % command)
 
     def update_models(self, trigger=None, trigger_data=None):
         # Update the <select> options in the web form with current

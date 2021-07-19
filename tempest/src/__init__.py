@@ -14,6 +14,23 @@ class _MyAPI(BundleAPI):
 
     # Override method
     @staticmethod
+    def start_tool(session, bi, ti):
+        # session is an instance of chimerax.core.session.Session
+        # bi is an instance of chimerax.core.toolshed.BundleInfo
+        # ti is an instance of chimerax.core.toolshed.ToolInfo
+
+        # This method is called once for each time the tool is invoked.
+
+        # We check the name of the tool, which should match one of the
+        # ones listed in bundle_info.xml (without the leading and
+        # trailing whitespace), and create and return an instance of the
+        # appropriate class from the ``gui`` module.
+        from . import tm_gui
+        if ti.name == "Template Matching":
+            return tm_gui.TemplateMatchingTool(session, ti.name)
+        raise ValueError("trying to start unknown tool: %s" % ti.name)
+
+    @staticmethod
     def register_command(bi, ci, logger):
         # bi is an instance of chimerax.core.toolshed.BundleInfo
         # ci is an instance of chimerax.core.toolshed.CommandInfo
