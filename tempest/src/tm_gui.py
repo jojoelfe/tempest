@@ -44,7 +44,7 @@ class TemplateMatchingTool(HtmlToolInstance):
         # Set name displayed on title bar (defaults to tool_name)
         # Must be after the superclass initialization in order
         # to override the default
-        self.display_name = "Template Matching"
+        self.display_name = "Tempest"
 
         self._build_ui()
 
