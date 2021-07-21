@@ -1,11 +1,19 @@
 <html>
 <head>
-    <link rel="stylesheet" type="text/css" href="/chimerax/ui/html/css/bootstrap-3.3.7.css">
+    <link rel="stylesheet" type="text/css" href="/chimerax/ui/html/css/bootstrap-4.4.1.css">
    <link rel="stylesheet" type="text/css" href="/chimerax/ui/html/css/bootgrid-1.3.1.min.css">
    <link rel="stylesheet" type="text/css" href="/chimerax/ui/html/css/font-awesome-4.7.0.min.css">
+   <link rel="stylesheet" type="text/css" href="lib/tabulator_bootstrap4.min.css">
+    <style>
+        html {
+    font-size: 8px !important;
+} 
+    </style>
    <script src="/chimerax/ui/html/js/jquery-3.3.1.min.js"></script>
-   <script src="/chimerax/ui/html/js/bootstrap-3.3.7.js"></script>
-   <script src="/chimerax/ui/html/js/bootgrid-1.3.1.min.js"></script>
+   <script src="/chimerax/ui/html/js/bootstrap-4.4.1.js"></script>
+   <script src="/chimerax/ui/html/js/bootgrid-1.3.1.min.js"></script>   
+   <script src="lib/tabulator.min.js"></script>
+
 <title>Tempest</title>
 </head>
 <body onload="">
@@ -13,18 +21,18 @@
 <div class="container">
     
     <!-- Nav tabs -->
-    <ul class="nav nav-tabs" role="tablist">
-      <li class="active">
-          <a href="#home" role="tab" data-toggle="tab">
+    <ul class="nav nav-tabs"  role="tablist">
+      <li class="nav-item">
+          <a class="nav-link active" href="#home" data-toggle="tab" role="tab">
               From files
           </a>
       </li>
-      <li><a href="#profile" role="tab" data-toggle="tab">
+      <li class="nav-item"><a class="nav-link" href="#profile" data-toggle="tab" role="tab">
           From cisTEM
           </a>
       </li>
-      <li>
-          <a href="#messages" role="tab" data-toggle="tab">
+      <li class="nav-item">
+          <a href="#messages" class="nav-link" data-toggle="tab" role="tab">
               From star-file
           </a>
       </li>
@@ -55,10 +63,10 @@
             <input class="submit" type="submit" formaction="templatematching:load_database" 
     value="Load Database"/>
         </form>
-
+        <div id="tm-results-table"></div>
       </div>
       <div class="tab-pane fade" id="messages">
-          <h2>Messages Content Goes Here</h2>
+        Starfile <input type="text" name="starfile" value=""></input></li>
       </div>
       
     </div>
@@ -67,12 +75,18 @@
 
 
 <h4>Display Options</h4>
-<ul>
-<li><input type="color" name="color" value="#ff0000">Color</input></li>
-<li>Number of atoms (1-5):
-    <input type="number" name="count" value="1" min="1" max="5"/></li>
-</ul>
-<input class="submit" type="submit" formaction="templatematching:highlight" 
-    value="Highlight Center of Mass"/>
+<div class="form-check">
+    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="option1" checked>
+    <label class="form-check-label" for="exampleRadios1">
+      Show Matches
+    </label>
+  </div>
+  <div class="form-check">
+    <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+    <label class="form-check-label" for="exampleRadios2">
+      Show Template
+    </label>
+  </div>
+  
 </body>
 </html>

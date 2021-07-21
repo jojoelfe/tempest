@@ -76,7 +76,28 @@ class TemplateMatchingTool(HtmlToolInstance):
             # and construct a command to execute
             from urllib.parse import parse_qs
             query = parse_qs(url.query())
-            self.session.logger.info(f"{query}")
+            from .cistem_database import get_tm_results_from_database
+            tm_info = get_tm_results_from_database(query['database'][0])
+            js = f"tm_info={tm_info.to_json(orient='records')};"
+            js+="""
+            var table = new Tabulator("#tm-results-table", {
+                data:tm_info, //assign data to table
+columns:[
+        {title:"Id", field:"TEMPLATE_MATCH_ID", sorter:"number"},
+        {title:"Image", field:"IMAGE_NAME", sorter:"string"},
+        {title:"Template", field:"REFERENCE_NAME", sorter:"string"},
+        {title:"Matches", field:"NUM_MATCHES", formatter:"number"},
+        {title:"Mean", field:"AVG_SCORE", sorter:"number",formatter:"money",formatterParams:{
+    
+    precision:2,}},
+        {title:"Max", field:"MAX_SCORE", sorter:"number",formatter:"money",formatterParams:{
+    
+    precision:2,
+}},
+    ], selectable:1,          });
+            """
+            self.session.logger.info(js)
+            self.html_view.runJavaScript(js)
             # First the command
             # cmd_text = ["tutorial", command]
 

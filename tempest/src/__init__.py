@@ -26,7 +26,7 @@ class _MyAPI(BundleAPI):
         # trailing whitespace), and create and return an instance of the
         # appropriate class from the ``gui`` module.
         from . import tm_gui
-        if ti.name == "Template Matching":
+        if ti.name == "Tempest":
             return tm_gui.TemplateMatchingTool(session, ti.name)
         raise ValueError("trying to start unknown tool: %s" % ti.name)
 

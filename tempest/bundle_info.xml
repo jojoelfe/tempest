@@ -30,7 +30,7 @@ will be displayed without the ChimeraX- prefix.
   <!-- DataFiles is a list of additional files to include in bundle -->
   <DataFiles>
       <DataFile>tm_gui.html</DataFile>
-      <DataFile>lib/tabulator.min.css</DataFile>
+      <DataFile>lib/tabulator_bootstrap4.min.css</DataFile>
       <DataFile>lib/tabulator.min.js</DataFile>
       <DataFile>tm_gui.html</DataFile>
   </DataFiles>
