@@ -39,7 +39,7 @@ class TemplateMatchingTool(HtmlToolInstance):
         # initial tool size in pixels.  For debugging, add
         # "log_errors=True" to get Javascript errors logged
         # to the ChimeraX log window.
-        super().__init__(session, tool_name, size_hint=(575, 400))
+        super().__init__(session, tool_name, size_hint=(575, 400),log_errors=True)
         # self.session = session
         # Set name displayed on title bar (defaults to tool_name)
         # Must be after the superclass initialization in order
@@ -80,52 +80,13 @@ class TemplateMatchingTool(HtmlToolInstance):
             tm_info = get_tm_results_from_database(query['database'][0])
             js = f"tm_info={tm_info.to_json(orient='records')};"
             js+="""
-            var table = new Tabulator("#tm-results-table", {
-                data:tm_info, //assign data to table
-columns:[
-        {title:"Id", field:"TEMPLATE_MATCH_ID", sorter:"number"},
-        {title:"Image", field:"IMAGE_NAME", sorter:"string"},
-        {title:"Template", field:"REFERENCE_NAME", sorter:"string"},
-        {title:"Matches", field:"NUM_MATCHES", formatter:"number"},
-        {title:"Mean", field:"AVG_SCORE", sorter:"number",formatter:"money",formatterParams:{
-    
-    precision:2,}},
-        {title:"Max", field:"MAX_SCORE", sorter:"number",formatter:"money",formatterParams:{
-    
-    precision:2,
-}},
-    ], selectable:1,          });
+            load_database(tm_info);
             """
-            self.session.logger.info(js)
             self.html_view.runJavaScript(js)
-            # First the command
-            # cmd_text = ["tutorial", command]
-
-            # Next the atom specifier
-            # target = query["target"][0]
-            # models = query["model"]
-            # if target == "sel":
-            #    cmd_text.append("sel")
-            # elif target == "model":
-            #    cmd_text.append(''.join(models))
-            # else target must be "all":
-            #   for which we leave off atom specifier completely
-
-            # Then "highlight" specific parameters
-            #if command == "highlight":
-            #    color = query["color"][0]
-            #    cmd_text.append(color)
-            #    count = query["count"][0]
-            #    cmd_text.extend(["count", count])
-
-            # Add remaining global options
-            #weighted = "weighted" in query
-            #cmd_text.extend(["weighted", "true" if weighted else "false"])
-            #transformed = "transformed" in query
-            #cmd_text.extend(["transformed", "true" if transformed else "false"])
-
-            # Run the command
-            #cmd = ' '.join(cmd_text)
+        elif command in ["load_job_from_database"]:
+            from urllib.parse import parse_qs
+            query = parse_qs(url.query())
+            self.session.logger.info(f"Got event {query}")
             #from chimerax.core.commands import run
             #run(self.session, cmd)
         else:
