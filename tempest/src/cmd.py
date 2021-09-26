@@ -137,42 +137,53 @@ changethreshold_desc = CmdDesc(required=[("template", ModelArg),
                                optional=[("unscaled_mip", BoolArg)])
 
 
-def loadtm_project(session, cistem_database, image_asset, volume_asset, job_number=None):
+def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, volume_asset=None, job_number=None):
     import sqlite3
 
     con = sqlite3.connect(cistem_database)
     cur = con.cursor()
 
-    cur.execute(
-        f"SELECT IMAGE_ASSET_ID,FILENAME FROM IMAGE_ASSETS WHERE IMAGE_ASSET_ID={image_asset}")
-    results = cur.fetchall()
-
-    if len(results) > 0:
-        micrograph = open_cmd.provider_open(session, [results[0][1]])[0]
-
+    if tm_index is None:
         cur.execute(
-            f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE FROM TEMPLATE_MATCH_LIST WHERE IMAGE_ASSET_ID={image_asset} AND REFERENCE_VOLUME_ASSET_ID={volume_asset}")
-        resultstm = cur.fetchall()
-        if len(resultstm) > 1:
-            session.logger.info("Multiple results found, using first")
-        elif len(resultstm) == 1:
-            session.logger.info("Results found")
+            f"SELECT IMAGE_ASSET_ID,FILENAME FROM IMAGE_ASSETS WHERE IMAGE_ASSET_ID={image_asset}")
+        results = cur.fetchall()
+
+        if len(results) > 0:
+            micrograph = open_cmd.provider_open(session, [results[0][1]])[0]
+
+            cur.execute(
+                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE IMAGE_ASSET_ID={image_asset} AND REFERENCE_VOLUME_ASSET_ID={volume_asset}")
+            resultstm = cur.fetchall()
+            if len(resultstm) > 1:
+                session.logger.info("Multiple results found, using first")
+            elif len(resultstm) == 1:
+                session.logger.info("Results found")
+            else:
+                session.logger.error(
+                    "No Template Match results for this volume found!")
+                con.close()
+                return
         else:
             session.logger.error(
-                "No Template Match results for this volume found!")
-            con.close()
-            return
-        cur.execute(
-            f"SELECT VOLUME_ASSET_ID,FILENAME FROM VOLUME_ASSETS WHERE VOLUME_ASSET_ID={volume_asset}")
-        vol_results = cur.fetchall()
-        # session.logger.info(f"{resultstm[0][0]},{resultstm[0][1]},{resultstm[0][2]},{resultstm[0][3]},{resultstm[0][4]},{vol_results[0][1]},{resultstm[0][6]},{resultstm[0][5]}")
-        loadtm(session, resultstm[0][0], resultstm[0][7], resultstm[0][1], resultstm[0][2],
-               resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5])
-
-    else:
-        session.logger.error(
             "No Template Match results for this volume found!")
 
+            con.close()
+            return
+    else:
+        cur.execute(
+                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_ID={tm_index}")
+        resultstm = cur.fetchall()
+        volume_asset = resultstm[0][8]
+    
+
+    cur.execute(
+        f"SELECT VOLUME_ASSET_ID,FILENAME FROM VOLUME_ASSETS WHERE VOLUME_ASSET_ID={volume_asset}")
+    vol_results = cur.fetchall()
+    # session.logger.info(f"{resultstm[0][0]},{resultstm[0][1]},{resultstm[0][2]},{resultstm[0][3]},{resultstm[0][4]},{vol_results[0][1]},{resultstm[0][6]},{resultstm[0][5]}")
+    loadtm(session, resultstm[0][0], resultstm[0][7], resultstm[0][1], resultstm[0][2],
+            resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5])
+
+       
     con.close()
 
 
@@ -194,10 +205,13 @@ def color_by_score(session, template, colormap):
     run(session,f"key {colormap} {' '.join([':'+str(x) for x in np.arange(min,max+1)])}")
 
 
-loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg),
+loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg)],
+                                        
+                                       
+                              optional=[("job_number", IntArg),
+                                        ("tm_index", IntArg),
                                         ("image_asset", IntArg),
-                                        ("volume_asset", IntArg)],
-                              optional=[("job_number", IntArg)])
+                                        ("volume_asset", IntArg)])
 
 
 def add_molecule(session, template, molecule):

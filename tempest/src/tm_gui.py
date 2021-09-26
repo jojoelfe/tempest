@@ -78,6 +78,7 @@ class TemplateMatchingTool(HtmlToolInstance):
             query = parse_qs(url.query())
             from .cistem_database import get_tm_results_from_database
             tm_info = get_tm_results_from_database(query['database'][0])
+            self.database = query['database'][0]
             js = f"tm_info={tm_info.to_json(orient='records')};"
             js+="""
             load_database(tm_info);
@@ -87,6 +88,8 @@ class TemplateMatchingTool(HtmlToolInstance):
             from urllib.parse import parse_qs
             query = parse_qs(url.query())
             self.session.logger.info(f"Got event {query}")
+            from chimerax.core.commands import run
+            run(self.session, f"tm load_project {self.database} tm_index {query['tm_id'][0]}")
             #from chimerax.core.commands import run
             #run(self.session, cmd)
         else:

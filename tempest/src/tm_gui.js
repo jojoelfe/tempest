@@ -14,7 +14,7 @@ precision:2,}},
 precision:2,
 }},
 ], selectable:1, rowSelected:function(row){
-window.location = "templatematching:load_job_from_database";
+window.location = "templatematching:load_job_from_database?tm_id="+row.getData().TEMPLATE_MATCH_ID;
 
 }         });
 }
