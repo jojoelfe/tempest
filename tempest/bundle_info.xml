@@ -56,6 +56,8 @@ will be displayed without the ChimeraX- prefix.
       Load template match results by manually loading files</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: tm load_project :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tm load_star :: General ::
+      Load template match results from a starfile</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: tm change_threshold :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: tm color_by_score :: General ::

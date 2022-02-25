@@ -24,11 +24,16 @@ from chimerax.core.commands import run
 # ==========================================================================
 
 
-def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, threshold, pixelsize):
+def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, threshold, pixelsize, image = None):
     """Load template matching results."""
 
     if type(template) == str:
         template = open_cmd.provider_open(session, [template])[0]
+    if type(image) == str:
+        image = open_cmd.provider_open(session, [image])[0]
+    #from chimerax.core.commands import run
+    #run(session, f"volume #{image.id[0]} color black color white color white")
+
 
     mip_data = mrc.open(mip)[0].matrix()
 
@@ -58,7 +63,10 @@ loadtm_desc = CmdDesc(required=[("mip", FileNameArg),
                                 ("template", Or(ModelArg, FileNameArg)),
                                 ("threshold", FloatArg),
                                 ("pixelsize", FloatArg)],
-                      optional=[])
+                                optional=[
+                                ("image", FileNameArg)
+                                ]
+                      )
 
 
 def changethreshold(session, template, threshold, unscaled_mip=False):
@@ -137,6 +145,46 @@ changethreshold_desc = CmdDesc(required=[("template", ModelArg),
                                optional=[("unscaled_mip", BoolArg)])
 
 
+def loadtm_star(session, filename):
+    # Load tempalte matches from a starfile
+    import starfile
+
+    matches = starfile.read(filename)
+    images = matches["image_filename"].unique()
+    templates = matches["template_filename"].unique()
+    for image in images:
+        for template in templates:
+            template_obj = open_cmd.provider_open(session, [template])[0]
+            if type(template_obj) == Volume:
+                origin_transform = translation(-0.5 *
+                                       np.array(template_obj.data.size) * 1.5)
+            image_obj = open_cmd.provider_open(session, [image])[0]
+            my_matches = matches[(matches["image_filename"] == image) & (matches["template_filename"] == template)]
+            placements = np.transpose(np.array([np.array(my_matches["defocus"]),
+                                            np.array(my_matches["y"]),
+                                            np.array(my_matches["x"]),
+                                             np.array(my_matches["phi"]),
+                                             np.array(my_matches["theta"]),
+                                             np.array(my_matches["psi"]),
+                                             np.array(my_matches["peak_value"]),
+            ]))
+            
+            template_obj.tm_placements = placements
+            t = Places([translation(np.array((x[2], x[1], x[0])))  # Translation to correct coordinates
+                        * rotation(np.array((0, 0, 1)), -x[5])  # Psi
+                        * rotation(np.array((0, 1, 0)), -x[4])  # Theta
+                        * rotation(np.array((0, 0, 1)), -x[3])  # Phi
+                        * origin_transform for x in placements])
+            template_obj.tm_positions = t
+            for surface in template_obj.surfaces:
+                surface.set_positions(t)
+
+
+loadtm_star_desc = CmdDesc(required=[("filename", FileNameArg)
+                                         ],
+                               optional=[])
+
+
 def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, volume_asset=None, job_number=None):
     import sqlite3
 
@@ -152,7 +200,7 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
             micrograph = open_cmd.provider_open(session, [results[0][1]])[0]
 
             cur.execute(
-                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE IMAGE_ASSET_ID={image_asset} AND REFERENCE_VOLUME_ASSET_ID={volume_asset}")
+                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID, IMAGE_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE IMAGE_ASSET_ID={image_asset} AND REFERENCE_VOLUME_ASSET_ID={volume_asset}")
             resultstm = cur.fetchall()
             if len(resultstm) > 1:
                 session.logger.info("Multiple results found, using first")
@@ -171,7 +219,7 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
             return
     else:
         cur.execute(
-                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_ID={tm_index}")
+                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID, IMAGE_ASSET_ID  FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_ID={tm_index}")
         resultstm = cur.fetchall()
         volume_asset = resultstm[0][8]
     
@@ -179,9 +227,12 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
     cur.execute(
         f"SELECT VOLUME_ASSET_ID,FILENAME FROM VOLUME_ASSETS WHERE VOLUME_ASSET_ID={volume_asset}")
     vol_results = cur.fetchall()
+    cur.execute(
+        f"SELECT IMAGE_ASSET_ID,FILENAME FROM IMAGE_ASSETS WHERE IMAGE_ASSET_ID={resultstm[0][9]}")
+    img_results = cur.fetchall()
     # session.logger.info(f"{resultstm[0][0]},{resultstm[0][1]},{resultstm[0][2]},{resultstm[0][3]},{resultstm[0][4]},{vol_results[0][1]},{resultstm[0][6]},{resultstm[0][5]}")
     loadtm(session, resultstm[0][0], resultstm[0][7], resultstm[0][1], resultstm[0][2],
-            resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5])
+            resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5], img_results[0][1])
 
        
     con.close()

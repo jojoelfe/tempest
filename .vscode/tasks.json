@@ -6,7 +6,7 @@
         {
             "label": "Test in Chimerax",
             "type": "shell",
-            "command": "& 'C:/Program Files/ChimeraX 1.1/bin/ChimeraX-console.exe'  --cmd 'devel install C:/Users/jojot/template_matching_chimerax/template_matching_command/;  open E:/MT/slab.mrc'",
+            "command": "/groups/cryoadmin/software/CHIMERAX/chimerax-20210531/chimerax-2021.05.29/bin/ChimeraX  --cmd 'devel install /groups/elferich/template_matching_chimerax/tempest/;'",
             "problemMatcher": []
         }
     ]
