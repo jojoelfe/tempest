@@ -17,7 +17,7 @@ from chimerax.map.volume import Volume
 import numpy as np
 from scipy.spatial import KDTree, distance_matrix
 from chimerax.open_command import cmd as open_cmd
-from chimerax.core.colors import BuiltinColormaps
+from chimerax.core.colors import BuiltinColormaps, BuiltinColors
 from chimerax.core.commands import run
 # ==========================================================================
 # Functions and descriptions for registering using ChimeraX bundle API
@@ -148,7 +148,8 @@ changethreshold_desc = CmdDesc(required=[("template", ModelArg),
 def loadtm_star(session, filename):
     # Load tempalte matches from a starfile
     import starfile
-
+    from chimerax.map.volumecommand import volume
+    from chimerax.std_commands.camera import camera
     matches = starfile.read(filename)
     images = matches["image_filename"].unique()
     templates = matches["template_filename"].unique()
@@ -160,15 +161,20 @@ def loadtm_star(session, filename):
                                        np.array(template_obj.data.size) * 1.5)
             image_obj = open_cmd.provider_open(session, [image])[0]
             my_matches = matches[(matches["image_filename"] == image) & (matches["template_filename"] == template)]
+            pixel_size = my_matches["pixel_size"].loc[0]
+            volume(session,volumes=[image_obj],voxel_size=(pixel_size,pixel_size,pixel_size),origin=(0.0,0.0,-4000))
+            camera(session,type='ortho')
+            session.image_obj = image_obj
+            session.template_obj = template_obj
             placements = np.transpose(np.array([np.array(my_matches["defocus"]),
-                                            np.array(my_matches["y"]),
-                                            np.array(my_matches["x"]),
+                                             np.array(my_matches["y"]),
+                                             np.array(my_matches["x"]),
                                              np.array(my_matches["phi"]),
                                              np.array(my_matches["theta"]),
                                              np.array(my_matches["psi"]),
                                              np.array(my_matches["peak_value"]),
             ]))
-            
+            # image_obj.data.set_step((pixel_size,pixel_size,pixel_size))
             template_obj.tm_placements = placements
             t = Places([translation(np.array((x[2], x[1], x[0])))  # Translation to correct coordinates
                         * rotation(np.array((0, 0, 1)), -x[5])  # Psi
@@ -246,14 +252,14 @@ color_by_score_desc = CmdDesc(required=[("template", ModelArg),
 def color_by_score(session, template, colormap):
     cm1 = BuiltinColormaps[colormap]
     mips = np.array([x[6] for x in template.tm_placements],dtype=np.float32)
-    min = np.min(np.floor(mips))
-    max = np.max(np.ceil(mips))
+    min = 7.0
+    max = 14.0
     cmn = cm1.rescale_range(min,max)
     colors = cmn.interpolated_rgba8(mips)
 
     for surface in template.surfaces:   
         surface.set_colors(colors)
-    run(session,f"key {colormap} {' '.join([':'+str(x) for x in np.arange(min,max+1)])}")
+    run(session,f"key {colormap} {' '.join([':'+str(x) for x in np.linspace(min,max+1,num=len(cm1.colors))])}")
 
 
 loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg)],
