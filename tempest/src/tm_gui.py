@@ -84,6 +84,15 @@ class TemplateMatchingTool(HtmlToolInstance):
             load_database(tm_info);
             """
             self.html_view.runJavaScript(js)
+        elif command in ["load_starfile"]:
+            # Collect the optional parameters from URL query parameters
+            # and construct a command to execute
+            from urllib.parse import parse_qs
+            query = parse_qs(url.query())
+            from .cistem_database import get_tm_results_from_database
+            self.starfile = query['starfile'][0]
+            from chimerax.core.commands import run
+            run(self.session, f"tm load_star {self.starfile}")
         elif command in ["load_job_from_database"]:
             from urllib.parse import parse_qs
             query = parse_qs(url.query())

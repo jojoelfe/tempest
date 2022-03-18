@@ -24,17 +24,19 @@ from chimerax.core.commands import run
 # ==========================================================================
 
 
-def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, threshold, pixelsize, image = None):
+def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, threshold, pixelsize, image=None):
     """Load template matching results."""
-
-    if type(template) == str:
-        template = open_cmd.provider_open(session, [template])[0]
+    from chimerax.map.volumecommand import volume
+    from chimerax.std_commands.camera import camera
     if type(image) == str:
         image = open_cmd.provider_open(session, [image])[0]
+    if type(template) == str:
+        template = open_cmd.provider_open(session, [template])[0]
+   
     #from chimerax.core.commands import run
-    #run(session, f"volume #{image.id[0]} color black color white color white")
+    # run(session, f"volume #{image.id[0]} color black color white color white")
 
-
+    volume(session, volumes=[image], origin=(0.0, 0.0, -2000))
     mip_data = mrc.open(mip)[0].matrix()
 
     template.tm_mip_data = mip_data
@@ -53,6 +55,28 @@ def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, thres
     template.tm_pixelsize = pixelsize
 
     changethreshold(session, template, threshold)
+    run(session, "view orient")
+    im_mean = image.data.full_matrix().mean()
+    im_std = np.std(image.data.full_matrix())
+    im_min = np.min(image.data.full_matrix())
+    im_max = np.max(image.data.full_matrix())
+    volume(session, [image], level=[
+        (im_min, 1.0),
+        (im_mean-im_std, 1.0),
+        (im_mean+im_std, 1.0),
+        (im_max, 0.999)],
+        color=[
+        BuiltinColors["black"],
+        BuiltinColors["black"],
+
+        BuiltinColors["white"],
+        BuiltinColors["white"],
+    ])
+    camera(session, type='ortho')
+    session.image_obj = image
+    session.template_obj = template
+
+    
 
 
 loadtm_desc = CmdDesc(required=[("mip", FileNameArg),
@@ -63,14 +87,13 @@ loadtm_desc = CmdDesc(required=[("mip", FileNameArg),
                                 ("template", Or(ModelArg, FileNameArg)),
                                 ("threshold", FloatArg),
                                 ("pixelsize", FloatArg)],
-                                optional=[
-                                ("image", FileNameArg)
-                                ]
-                      )
+                      optional=[
+    ("image", FileNameArg)
+]
+)
 
 
 def changethreshold(session, template, threshold, unscaled_mip=False):
-
     if not hasattr(template, "tm_mip_data"):
         session.logger.error("Model is not a Template Matching model")
         return
@@ -83,10 +106,9 @@ def changethreshold(session, template, threshold, unscaled_mip=False):
         session.logger.error("Only Volumes support for now")
         return
 
-    
-
     if unscaled_mip:
-        pixel_coordinates = (template.tm_unscaled_mip_data > threshold).nonzero()
+        pixel_coordinates = (
+            template.tm_unscaled_mip_data > threshold).nonzero()
         mips = template.tm_unscaled_mip_data[pixel_coordinates]
     else:
         pixel_coordinates = (template.tm_mip_data > threshold).nonzero()
@@ -125,7 +147,8 @@ def changethreshold(session, template, threshold, unscaled_mip=False):
                                                  1, -1),
                                              np.array(theta_of_peaks).reshape(
                                                  1, -1),
-                                             np.array(psi_of_peaks).reshape(1, -1),
+                                             np.array(psi_of_peaks).reshape(
+                                                 1, -1),
                                              np.array(mips).reshape(1, -1)),
                                              0))
     placements = placements[display > 0]
@@ -155,25 +178,47 @@ def loadtm_star(session, filename):
     templates = matches["template_filename"].unique()
     for image in images:
         for template in templates:
+            image_obj = open_cmd.provider_open(session, [image])[0]
+
             template_obj = open_cmd.provider_open(session, [template])[0]
             if type(template_obj) == Volume:
                 origin_transform = translation(-0.5 *
-                                       np.array(template_obj.data.size) * 1.5)
-            image_obj = open_cmd.provider_open(session, [image])[0]
-            my_matches = matches[(matches["image_filename"] == image) & (matches["template_filename"] == template)]
+                                               np.array(template_obj.data.size) * 1.5)
+            my_matches = matches[(matches["image_filename"] == image) & (
+                matches["template_filename"] == template)]
             pixel_size = my_matches["pixel_size"].loc[0]
-            volume(session,volumes=[image_obj],voxel_size=(pixel_size,pixel_size,pixel_size),origin=(0.0,0.0,-4000))
-            camera(session,type='ortho')
+            volume(session, volumes=[image_obj], voxel_size=(
+                pixel_size, pixel_size, pixel_size))
+            volume(session, volumes=[image_obj], origin=(0.0, 0.0, -2000))
+            im_mean = image_obj.data.full_matrix().mean()
+            im_std = np.std(image_obj.data.full_matrix())
+            im_min = np.min(image_obj.data.full_matrix())
+            im_max = np.max(image_obj.data.full_matrix())
+            volume(session, [image_obj], level=[
+                (im_min, 1.0),
+                (im_mean-im_std, 1.0),
+                (im_mean+im_std, 1.0),
+                (im_max, 0.999)],
+                color=[
+                BuiltinColors["black"],
+                BuiltinColors["black"],
+
+                BuiltinColors["white"],
+                BuiltinColors["white"],
+            ])
+            camera(session, type='ortho')
             session.image_obj = image_obj
             session.template_obj = template_obj
             placements = np.transpose(np.array([np.array(my_matches["defocus"]),
-                                             np.array(my_matches["y"]),
-                                             np.array(my_matches["x"]),
-                                             np.array(my_matches["phi"]),
-                                             np.array(my_matches["theta"]),
-                                             np.array(my_matches["psi"]),
-                                             np.array(my_matches["peak_value"]),
-            ]))
+                                                np.array(my_matches["y"]),
+                                                np.array(my_matches["x"]),
+                                                np.array(my_matches["phi"]),
+                                                np.array(my_matches["theta"]),
+                                                np.array(my_matches["psi"]),
+                                                np.array(
+                                                    my_matches["peak_value"]),
+                                                ]))
+            placements = placements[my_matches["display"]]
             # image_obj.data.set_step((pixel_size,pixel_size,pixel_size))
             template_obj.tm_placements = placements
             t = Places([translation(np.array((x[2], x[1], x[0])))  # Translation to correct coordinates
@@ -184,11 +229,12 @@ def loadtm_star(session, filename):
             template_obj.tm_positions = t
             for surface in template_obj.surfaces:
                 surface.set_positions(t)
+    run(session, "view orient")
 
 
 loadtm_star_desc = CmdDesc(required=[("filename", FileNameArg)
-                                         ],
-                               optional=[])
+                                     ],
+                           optional=[])
 
 
 def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, volume_asset=None, job_number=None):
@@ -219,16 +265,15 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
                 return
         else:
             session.logger.error(
-            "No Template Match results for this volume found!")
+                "No Template Match results for this volume found!")
 
             con.close()
             return
     else:
         cur.execute(
-                f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID, IMAGE_ASSET_ID  FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_ID={tm_index}")
+            f"SELECT SCALED_MIP_OUTPUT_FILE, PHI_OUTPUT_FILE, THETA_OUTPUT_FILE, PSI_OUTPUT_FILE, DEFOCUS_OUTPUT_FILE, USED_PIXEL_SIZE, USED_THRESHOLD, MIP_OUTPUT_FILE, REFERENCE_VOLUME_ASSET_ID, IMAGE_ASSET_ID  FROM TEMPLATE_MATCH_LIST WHERE TEMPLATE_MATCH_ID={tm_index}")
         resultstm = cur.fetchall()
         volume_asset = resultstm[0][8]
-    
 
     cur.execute(
         f"SELECT VOLUME_ASSET_ID,FILENAME FROM VOLUME_ASSETS WHERE VOLUME_ASSET_ID={volume_asset}")
@@ -238,9 +283,8 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
     img_results = cur.fetchall()
     # session.logger.info(f"{resultstm[0][0]},{resultstm[0][1]},{resultstm[0][2]},{resultstm[0][3]},{resultstm[0][4]},{vol_results[0][1]},{resultstm[0][6]},{resultstm[0][5]}")
     loadtm(session, resultstm[0][0], resultstm[0][7], resultstm[0][1], resultstm[0][2],
-            resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5], img_results[0][1])
+           resultstm[0][3], resultstm[0][4], vol_results[0][1], resultstm[0][6], resultstm[0][5], img_results[0][1])
 
-       
     con.close()
 
 
@@ -249,22 +293,24 @@ color_by_score_desc = CmdDesc(required=[("template", ModelArg),
                                         ],
                               optional=[])
 
+
 def color_by_score(session, template, colormap):
     cm1 = BuiltinColormaps[colormap]
-    mips = np.array([x[6] for x in template.tm_placements],dtype=np.float32)
+    mips = np.array([x[6] for x in template.tm_placements], dtype=np.float32)
     min = 7.0
     max = 14.0
-    cmn = cm1.rescale_range(min,max)
+    cmn = cm1.rescale_range(min, max)
     colors = cmn.interpolated_rgba8(mips)
 
-    for surface in template.surfaces:   
+    for surface in template.surfaces:
         surface.set_colors(colors)
-    run(session,f"key {colormap} {' '.join([':'+str(x) for x in np.linspace(min,max+1,num=len(cm1.colors))])}")
+    run(session,
+        f"key {colormap} {' '.join([':'+str(x) for x in np.linspace(min,max+1,num=len(cm1.colors))])}")
 
 
 loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg)],
-                                        
-                                       
+
+
                               optional=[("job_number", IntArg),
                                         ("tm_index", IntArg),
                                         ("image_asset", IntArg),
@@ -274,6 +320,7 @@ loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg)],
 def add_molecule(session, template, molecule):
     positions = template.get_positions()
     molecule.set_positions(positions)
+
 
 def show_tm(session, template, show):
 

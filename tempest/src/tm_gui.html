@@ -7,7 +7,7 @@
   <link rel="stylesheet" type="text/css" href="lib/tabulator_bootstrap4.min.css">
   <style>
     html {
-      font-size: 8pt !important;
+      font-size: 1.2rem !important;
     }
   </style>
   <script src="/chimerax/ui/html/js/jquery-3.3.1.min.js"></script>
@@ -19,16 +19,12 @@
 </head>
 
 <body onload="">
-  <div class="container">
+  <div class="container-fluid">
     <h4>Load Results</h4>
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-      <li class="nav-item">
-        <a class="nav-link active" href="#home" data-toggle="tab" role="tab">
-          From files
-        </a>
-      </li>
+      
       <li class="nav-item"><a class="nav-link" href="#profile" data-toggle="tab" role="tab">
           From cisTEM
         </a>
@@ -43,33 +39,8 @@
 
     <!-- Tab panes -->
     <div class="tab-content">
-      <div class="tab-pane fade show active in" id="home">
-        <form method="get">
-
-          <div class="form-row">
-            <div class="form-group col-md12">
-
-              <label for="exampleInputEmail1">Image</label>
-              <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-
-            </div>
-            <div class="form-group col-md6">
-              <label for="exampleInputPassword1">Mip</label>
-              <input type="text" class="form-control" id="exampleInputPassword1">
-            </div>
-            <div class="form-group col-md6">
-              <label for="exampleInputPassword1">Mip</label>
-              <input type="text" class="form-control" id="exampleInputPassword1">
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary submit" formaction="templatematching:load_files">Load</button>
-
-
-        </form>
-
-      </div>
-      <div class="tab-pane fade" id="profile">
+      
+      <div class="tab-pane fade show active in" id="profile">
         <form action="templatematching:load_database" method="get">
           <div class="input-group mb-3 mt-3">
             <input type="text" name="database" class="form-control" placeholder="Database filename"
@@ -84,7 +55,17 @@
         <div id="tm-results-table"></div>
       </div>
       <div class="tab-pane fade" id="messages">
-        Starfile <input type="text" name="starfile" value=""></input></li>
+        <form action="templatematching:load_starfile" method="get">
+          <div class="input-group mb-3 mt-3">
+            <input type="text" name="starfile" class="form-control" placeholder="Starfile filename"
+              aria-label="Starfile filename" aria-describedby="button-addon2">
+            <div class="input-group-append">
+              <input type="submit" class="btn btn-primary" value="Load">
+              
+            </div>
+          </div>
+
+        </form>
       </div>
 
     </div>

@@ -6,7 +6,7 @@ will be displayed without the ChimeraX- prefix.
 -->
 
 <BundleInfo name="ChimeraX-Tempest"
-	    version="0.1" package="chimerax.tempest"
+	    version="0.1.2" package="chimerax.tempest"
   	    minSessionVersion="1" maxSessionVersion="1">
 
   <!-- Additional information about bundle source -->
