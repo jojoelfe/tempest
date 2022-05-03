@@ -52,16 +52,22 @@ will be displayed without the ChimeraX- prefix.
     <!-- ChimeraX classifiers describe supplied functionality -->
     <!-- Register two commands for printing the center of mass
 	 and selecting/coloring atom(s) nearest the center of mass of atoms -->
-    <ChimeraXClassifier>ChimeraX :: Command :: tm load_manual :: General ::
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest load_manual :: General ::
       Load template match results by manually loading files</ChimeraXClassifier>
-    <ChimeraXClassifier>ChimeraX :: Command :: tm load_project :: General ::
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest load_project :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
-    <ChimeraXClassifier>ChimeraX :: Command :: tm load_star :: General ::
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest load_star :: General ::
       Load template match results from a starfile</ChimeraXClassifier>
-    <ChimeraXClassifier>ChimeraX :: Command :: tm change_threshold :: General ::
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest change_threshold :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
-    <ChimeraXClassifier>ChimeraX :: Command :: tm color_by_score :: General ::
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest color_by_score :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest color_by_distance :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest toggle_instancing :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>  
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest transfer_instancing :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>  
     <ChimeraXClassifier>ChimeraX :: Tool :: Tempest ::
       General :: Graphical interface to inspect cisTEM template matching results</ChimeraXClassifier>
   </Classifiers>

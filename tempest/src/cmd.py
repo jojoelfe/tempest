@@ -6,8 +6,9 @@ from chimerax.atomic import AtomsArg            # Collection of atoms argument
 from chimerax.core.commands import BoolArg      # Boolean argument
 from chimerax.core.commands import FileNameArg
 from chimerax.core.commands import FloatArg
-from chimerax.core.commands import ModelArg
+from chimerax.core.commands import ModelArg, ModelsArg
 from chimerax.core.commands import StringArg     # Color argument
+from chimerax.core.commands import ColorArg
 from chimerax.core.commands import IntArg       # Integer argument
 from chimerax.core.commands import EmptyArg     # (see below)
 from chimerax.core.commands import Or, Bounded  # Argument modifiers
@@ -19,6 +20,8 @@ from scipy.spatial import KDTree, distance_matrix
 from chimerax.open_command import cmd as open_cmd
 from chimerax.core.colors import BuiltinColormaps, BuiltinColors
 from chimerax.core.commands import run
+from chimerax.std_commands.view import view
+from chimerax.core.objects import Objects
 # ==========================================================================
 # Functions and descriptions for registering using ChimeraX bundle API
 # ==========================================================================
@@ -159,6 +162,8 @@ def changethreshold(session, template, threshold, unscaled_mip=False):
                 * rotation(np.array((0, 0, 1)), -x[3])  # Phi
                 * origin_transform for x in placements])
     template.tm_positions = t
+    template_obj.orig_position = template_obj.surfaces[0].get_positions()
+
     for surface in template.surfaces:
         surface.set_positions(t)
 
@@ -187,14 +192,15 @@ def loadtm_star(session, filename):
             my_matches = matches[(matches["image_filename"] == image) & (
                 matches["template_filename"] == template)]
             pixel_size = my_matches["pixel_size"].loc[0]
-            volume(session, volumes=[image_obj], voxel_size=(
-                pixel_size, pixel_size, pixel_size))
+            if pixel_size != 0.0:
+                volume(session, volumes=[image_obj], voxel_size=(
+                    pixel_size, pixel_size, pixel_size))
             volume(session, volumes=[image_obj], origin=(0.0, 0.0, -2000))
             im_mean = image_obj.data.full_matrix().mean()
             im_std = np.std(image_obj.data.full_matrix())
             im_min = np.min(image_obj.data.full_matrix())
             im_max = np.max(image_obj.data.full_matrix())
-            volume(session, [image_obj], level=[
+            volume(session, [image_obj], change="image",level=[
                 (im_min, 1.0),
                 (im_mean-im_std, 1.0),
                 (im_mean+im_std, 1.0),
@@ -218,7 +224,8 @@ def loadtm_star(session, filename):
                                                 np.array(
                                                     my_matches["peak_value"]),
                                                 ]))
-            placements = placements[my_matches["display"]]
+            if "display" in my_matches:
+                placements = placements[my_matches["display"]]
             # image_obj.data.set_step((pixel_size,pixel_size,pixel_size))
             template_obj.tm_placements = placements
             t = Places([translation(np.array((x[2], x[1], x[0])))  # Translation to correct coordinates
@@ -227,6 +234,7 @@ def loadtm_star(session, filename):
                         * rotation(np.array((0, 0, 1)), -x[3])  # Phi
                         * origin_transform for x in placements])
             template_obj.tm_positions = t
+            template_obj.orig_position = template_obj.surfaces[0].get_positions()
             for surface in template_obj.surfaces:
                 surface.set_positions(t)
     run(session, "view orient")
@@ -288,6 +296,35 @@ def loadtm_project(session, cistem_database, tm_index=None, image_asset=None, vo
     con.close()
 
 
+
+color_by_distance_desc = CmdDesc(required=[("model_to_color", ModelArg),
+                                           ("distance_threshold", FloatArg),
+                                           ("model_distance_from", ModelArg), 
+                                           
+                                           ],
+                                 optional=[("color_far", ColorArg),("color_close", ColorArg)])
+
+def color_by_distance(session, model_to_color, model_distance_from, distance_threshold, color_far=None, color_close=None):
+    
+    if not hasattr(model_to_color, "tm_placements"):
+        session.logger.error("Model does not have tm_placements")
+        return
+    
+    session.markers = model_distance_from
+    points = model_distance_from.atoms.scene_coords
+    colors = model_to_color.surfaces[0].get_colors()
+    kd = KDTree([[x[2],x[1],x[0]] for x in model_to_color.tm_placements])
+    near = kd.query_ball_point(points, distance_threshold)
+    if color_close is not None:
+        for res in near:
+            colors[res] = color_close.uint8x4()
+    if color_far is not None:
+        for res in near:
+            colors[np.setdiff1d(np.arange(colors.shape[0]),res)] = color_far.uint8x4()
+    for surface in model_to_color.surfaces:
+        surface.set_colors(colors)
+
+
 color_by_score_desc = CmdDesc(required=[("template", ModelArg),
                                         ("colormap", StringArg)
                                         ],
@@ -317,14 +354,49 @@ loadtm_project_desc = CmdDesc(required=[("cistem_database", FileNameArg)],
                                         ("volume_asset", IntArg)])
 
 
-def add_molecule(session, template, molecule):
-    positions = template.get_positions()
-    molecule.set_positions(positions)
-
-
-def show_tm(session, template, show):
-
-    if show:
-        template.set_positions(template.tm_positions)
+def transfer_instancing(session, template, target):
+    
+    if hasattr(template, "surfaces") and isinstance(template.surfaces, list):
+        positions = template.surfaces[0].get_positions()
     else:
-        template.set_positions()
+        positions = template.get_positions()
+
+   
+    # If the target has already multiple positions, revert to orig_position, otherwise use current positions
+    model = target
+    if len(model.get_positions()) > 1:
+        model.set_positions(model.orig_position)
+    orig_position = model.get_positions()
+    print(orig_position.array())
+    if not hasattr(model, "orig_position"):
+        model.orig_position = orig_position
+    model.tm_positions = positions
+    model.set_positions(positions * orig_position)
+
+transfer_instancing_desc = CmdDesc(required=[("template", ModelArg)],keyword=[("target", ModelArg)],required_arguments=['target'])
+
+def toggle_instancing(session, template):
+    if not hasattr(template, "tm_positions"):
+        session.logger.error("Model appears not to be loaded by tempest")
+        return
+    
+    if hasattr(template, "surfaces") and isinstance(template.surfaces, list):
+        current_positions = template.surfaces[0].get_positions()
+        if len(current_positions) > 1:
+            for surface in template.surfaces:
+                surface.set_positions(template.orig_position)
+            run(session, f"view #{template.id[0]}")
+        else:
+            for surface in template.surfaces:
+                surface.set_positions(template.tm_positions)
+            run(session, "view orient")
+    else:
+        current_positions = template.get_positions()
+        if len(current_positions) > 1:
+            template.set_positions(template.orig_position)
+            run(session, f"view #{template.id[0]}")
+        else:
+            template.set_positions(template.tm_positions)
+            run(session, "view orient")
+
+toggle_instancing_desc = CmdDesc(required=[("template", ModelArg)])
