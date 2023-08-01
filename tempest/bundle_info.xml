@@ -64,6 +64,8 @@ will be displayed without the ChimeraX- prefix.
       Load template match results from a cisTEM project</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: tempest color_by_distance :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>
+    <ChimeraXClassifier>ChimeraX :: Command :: tempest filter_by_distance :: General ::
+      Load template match results from a cisTEM project</ChimeraXClassifier>
     <ChimeraXClassifier>ChimeraX :: Command :: tempest toggle_instancing :: General ::
       Load template match results from a cisTEM project</ChimeraXClassifier>  
     <ChimeraXClassifier>ChimeraX :: Command :: tempest transfer_instancing :: General ::

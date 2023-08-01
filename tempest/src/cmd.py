@@ -83,6 +83,7 @@ def loadtm(session, mip, unscaled_mip, phi, theta, psi, defocus, template, thres
 
 
 loadtm_desc = CmdDesc(required=[("mip", FileNameArg),
+                                ("unscaled_mip", FileNameArg),
                                 ("phi", FileNameArg),
                                 ("theta", FileNameArg),
                                 ("psi", FileNameArg),
@@ -96,26 +97,26 @@ loadtm_desc = CmdDesc(required=[("mip", FileNameArg),
 )
 
 
-def changethreshold(session, template, threshold, unscaled_mip=False):
-    if not hasattr(template, "tm_mip_data"):
+def changethreshold(session, template_obj, threshold, unscaled_mip=False):
+    if not hasattr(template_obj, "tm_mip_data"):
         session.logger.error("Model is not a Template Matching model")
         return
 
     # Transform needed to center template around (0,0,0)
-    if type(template) == Volume:
+    if type(template_obj) == Volume:
         origin_transform = translation(-0.5 *
-                                       np.array(template.data.size) * template.tm_pixelsize)
+                                       np.array(template_obj.data.size) * template_obj.tm_pixelsize)
     else:
         session.logger.error("Only Volumes support for now")
         return
 
     if unscaled_mip:
         pixel_coordinates = (
-            template.tm_unscaled_mip_data > threshold).nonzero()
-        mips = template.tm_unscaled_mip_data[pixel_coordinates]
+            template_obj.tm_unscaled_mip_data > threshold).nonzero()
+        mips = template_obj.tm_unscaled_mip_data[pixel_coordinates]
     else:
-        pixel_coordinates = (template.tm_mip_data > threshold).nonzero()
-        mips = template.tm_mip_data[pixel_coordinates]
+        pixel_coordinates = (template_obj.tm_mip_data > threshold).nonzero()
+        mips = template_obj.tm_mip_data[pixel_coordinates]
 
     sort_index = np.argsort(mips)
 
@@ -124,15 +125,15 @@ def changethreshold(session, template, threshold, unscaled_mip=False):
         pixel_coordinates[0], pixel_coordinates[1], pixel_coordinates[2])
 
     if unscaled_mip:
-        mips = template.tm_unscaled_mip_data[pixel_coordinates]
+        mips = template_obj.tm_unscaled_mip_data[pixel_coordinates]
     else:
-        mips = template.tm_mip_data[pixel_coordinates]
+        mips = template_obj.tm_mip_data[pixel_coordinates]
 
-    phi_of_peaks = template.tm_phi_data[pixel_coordinates]
-    theta_of_peaks = template.tm_theta_data[pixel_coordinates]
-    psi_of_peaks = template.tm_psi_data[pixel_coordinates]
-    defocus_of_peaks = template.tm_defocus_data[pixel_coordinates]
-    pc = (template.tm_defocus_data[pixel_coordinates],
+    phi_of_peaks = template_obj.tm_phi_data[pixel_coordinates]
+    theta_of_peaks = template_obj.tm_theta_data[pixel_coordinates]
+    psi_of_peaks = template_obj.tm_psi_data[pixel_coordinates]
+    defocus_of_peaks = template_obj.tm_defocus_data[pixel_coordinates]
+    pc = (template_obj.tm_defocus_data[pixel_coordinates],
           pixel_coordinates[1], pixel_coordinates[2])
     coors = np.transpose((pixel_coordinates[1], pixel_coordinates[2]))
     dm = distance_matrix(coors, coors)
@@ -155,20 +156,20 @@ def changethreshold(session, template, threshold, unscaled_mip=False):
                                              np.array(mips).reshape(1, -1)),
                                              0))
     placements = placements[display > 0]
-    template.tm_placements = placements
-    t = Places([translation(np.array((x[2]*template.tm_pixelsize, x[1]*template.tm_pixelsize, x[0])))  # Translation to correct coordinates
+    template_obj.tm_placements = placements
+    t = Places([translation(np.array((x[2]*template_obj.tm_pixelsize, x[1]*template_obj.tm_pixelsize, x[0])))  # Translation to correct coordinates
                 * rotation(np.array((0, 0, 1)), -x[5])  # Psi
                 * rotation(np.array((0, 1, 0)), -x[4])  # Theta
                 * rotation(np.array((0, 0, 1)), -x[3])  # Phi
                 * origin_transform for x in placements])
-    template.tm_positions = t
+    template_obj.tm_positions = t
     template_obj.orig_position = template_obj.surfaces[0].get_positions()
 
-    for surface in template.surfaces:
+    for surface in template_obj.surfaces:
         surface.set_positions(t)
 
 
-changethreshold_desc = CmdDesc(required=[("template", ModelArg),
+changethreshold_desc = CmdDesc(required=[("template_obj", ModelArg),
                                          ("threshold", FloatArg)],
                                optional=[("unscaled_mip", BoolArg)])
 
@@ -329,6 +330,36 @@ color_by_score_desc = CmdDesc(required=[("template", ModelArg),
                                         ("colormap", StringArg)
                                         ],
                               optional=[])
+
+
+filter_by_distance_desc = CmdDesc(required=[("model_to_filter", ModelArg),
+                                           ("distance_threshold", FloatArg),
+                                           ("model_distance_from", ModelArg), 
+                                           
+                                           ],
+                                 optional=[("hide_far", BoolArg),("hide_close", BoolArg)])
+
+def filter_by_distance(session, model_to_filter, model_distance_from, distance_threshold, hide_far=False, hide_close=False):
+    
+    if not hasattr(model_to_filter, "tm_placements"):
+        session.logger.error("Model does not have tm_placements")
+        return
+    
+    session.markers = model_distance_from
+    points = model_distance_from.atoms.scene_coords
+    show = np.ones(len(model_to_filter.surfaces[0].get_positions()), dtype=bool)
+    kd = KDTree([[x[2],x[1],x[0]] for x in model_to_filter.tm_placements])
+    near = kd.query_ball_point(points, distance_threshold)
+    if hide_close:
+        for res in near:
+            show[res] = False
+    if hide_far:
+        for res in near:
+            show[np.setdiff1d(np.arange(show.shape[0]),res)] = False
+    for surface in model_to_filter.surfaces:
+        surface.set_display_positions(show)
+
+
 
 
 def color_by_score(session, template, colormap):

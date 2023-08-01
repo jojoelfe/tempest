@@ -66,6 +66,9 @@ class _MyAPI(BundleAPI):
         elif ci.name == "tempest color_by_distance":
             func = cmd.color_by_distance
             desc = cmd.color_by_distance_desc
+        elif ci.name == "tempest filter_by_distance":
+            func = cmd.filter_by_distance
+            desc = cmd.filter_by_distance_desc
         elif ci.name == "tempest toggle_instancing":
             func = cmd.toggle_instancing
             desc = cmd.toggle_instancing_desc

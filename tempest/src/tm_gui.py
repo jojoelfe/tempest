@@ -92,13 +92,13 @@ class TemplateMatchingTool(HtmlToolInstance):
             from .cistem_database import get_tm_results_from_database
             self.starfile = query['starfile'][0]
             from chimerax.core.commands import run
-            run(self.session, f"tm load_star {self.starfile}")
+            run(self.session, f"tempest load_star {self.starfile}")
         elif command in ["load_job_from_database"]:
             from urllib.parse import parse_qs
             query = parse_qs(url.query())
             self.session.logger.info(f"Got event {query}")
             from chimerax.core.commands import run
-            run(self.session, f"tm load_project {self.database} tm_index {query['tm_id'][0]}")
+            run(self.session, f"tempest load_project {self.database} tm_index {query['tm_id'][0]}")
             #from chimerax.core.commands import run
             #run(self.session, cmd)
         else:
